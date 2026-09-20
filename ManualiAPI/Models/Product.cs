@@ -76,8 +76,7 @@ public class Product
     
     public Product(string nome, string descricao, decimal preco, int estoque, bool ativo)
     {
-        _idCount++;
-        Id = _idCount;
+        this._id = _idCount++;
         
         Nome = nome;
         Descricao = descricao;
