@@ -1,35 +1,36 @@
-﻿namespace ManualiAPI.Models;
+using System.Reflection.Metadata.Ecma335;
 
-public abstract class User
+namespace ManualiAPI.Models;
+
+public class Adm
 {
-    private static int _idCount = 0;
+    private static int _idAdmCount = 0;
 
-    private int _id;
+    private int _idAdm;
     private string _username;
     private string _password;
     private string _email;
-    private string _cep;
 
     public int Id
     {
         get { return _id; }
-        set { _id = value; }
+        set { _Id = value; }
+
     }
 
     public string Username
     {
-        get { return _username; }
+        get{ return Username; }
         set
         {
             if (string.IsNullOrWhiteSpace(value))
             {
                 throw new ArgumentException("Nome não pode estar vazio");
             }
-
             _username = value;
         }
-    }
 
+    }
     public string Password
     {
         get { return _password; }
@@ -58,27 +59,13 @@ public abstract class User
         }
     }
 
-    public string Cep
+    public Adm(string username, string password, string email)
     {
-        get { return _cep; }
-        set
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                throw new ArgumentException("CEP não pode estar vazio");
-            }
-
-            _cep = value;
-        }
-    }
-
-    public User(string username, string password, string email, string cep)
-    {
-        _id = _idCount++;
+        _idAdm = _idAdmCount++;
 
         Username = username;
         Password = password;
         Email = email;
-        Cep = cep;
     }
+
 }
