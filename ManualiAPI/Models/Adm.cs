@@ -1,5 +1,3 @@
-using System.Reflection.Metadata.Ecma335;
-
 namespace ManualiAPI.Models;
 
 public class Adm
@@ -11,26 +9,26 @@ public class Adm
     private string _password;
     private string _email;
 
-    public int Id
+    public int IdAdm
     {
-        get { return _id; }
-        set { _Id = value; }
-
+        get { return _idAdm; }
+        set { _idAdm = value; }
     }
 
     public string Username
     {
-        get{ return Username; }
+        get { return _username; }
         set
         {
             if (string.IsNullOrWhiteSpace(value))
             {
                 throw new ArgumentException("Nome não pode estar vazio");
             }
+
             _username = value;
         }
-
     }
+
     public string Password
     {
         get { return _password; }
@@ -67,5 +65,4 @@ public class Adm
         Password = password;
         Email = email;
     }
-
 }
