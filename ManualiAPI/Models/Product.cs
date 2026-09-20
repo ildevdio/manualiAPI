@@ -1,16 +1,88 @@
-namespace ManualiAPI.Models;
+﻿namespace ManualiAPI.Models;
 
-// Classe que representa a tabela/entidade "Produto" do banco de dados.
-// Cada propriedade vira uma coluna (quando se usa EF Core ou similar).
 public class Product
 {
-    // Chave primária, normalmente auto-incrementada pelo banco.
-    public int Id { get; set; }
+    private static int _idCount = 0;
+    private int _id;
+    private string _nome;
+    private string _descricao;
+    private decimal _preco;
+    private int _estoque = 0;
+    private bool _ativo = true;
 
-    // "?" significa que a propriedade pode ser null.
-    public string? Name { get; set; }
+    public int Id
+    {
+        get { return _id; }
+        set { _id = value; }
+    }
 
-    public decimal Price { get; set; }
+    public string Nome
+    {
+        get { return _nome; }
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new ArgumentException("Nome não pode estar vazio.");
+            }
+            _nome = value;
+        }
+    }
 
-    public bool IsActive { get; set; } = true;
+    public string Descricao
+    {
+        get { return _descricao; }
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            { 
+                _descricao = " ";
+            }
+            else
+            {
+                _descricao = value;
+            }
+        }
+    }
+
+    public decimal Preco
+    {
+        get { return _preco; }
+        set
+        {
+            if (value < 0)
+            {
+                _preco = 0;
+                _ativo = false;
+            }
+            else
+            {
+                _preco = value;
+            }
+        }
+    }
+
+    public int Estoque
+    {
+        get { return _estoque; }
+        set { _estoque = value; }
+    }
+
+    public bool Ativo
+    {
+        get { return _ativo; }
+        set { _ativo = value; }
+    }
+    
+    public Product(string nome, string descricao, decimal preco, int estoque, bool ativo)
+    {
+        _idCount++;
+        Id = _idCount;
+        
+        Nome = nome;
+        Descricao = descricao;
+        Preco = preco;
+        Estoque = estoque;
+        Ativo = ativo;
+    }
 }
