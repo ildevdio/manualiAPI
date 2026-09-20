@@ -1,14 +1,21 @@
-using ManualiAPI.Models;
+﻿namespace ManualiAPI.Services;
 
-namespace ManualiAPI.Services;
+using ManualiAPI.DTO;
+using System.Collections.Generic;
 
-// Service = camada de REGRAS DE NEGÓCIO.
-// O controller conversa com o service, e o service conversa com o repository.
 public interface IProductService
 {
-    Task<IEnumerable<ProductDto>> GetAllAsync();
-    Task<ProductDto?> GetByIdAsync(int id);
-    Task<ProductDto> CreateAsync(CreateProductDto dto);
-    Task<ProductDto?> UpdateAsync(int id, UpdateProductDto dto);
-    Task<bool> DeleteAsync(int id);
+    GetProductDto Criar(CreateProductDto dto);
+    
+    IEnumerable<GetProductDto> Listar();
+
+    GetProductDto BuscarPorId(int id);
+    
+    GetProductDto BuscarPorNome(string nome);
+    
+    GetProductDto Atualizar(int id, UpdateProductDto dto);
+    
+    void Deletar(int id);
+    
+    
 }
