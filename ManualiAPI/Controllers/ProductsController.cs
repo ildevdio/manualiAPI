@@ -1,3 +1,5 @@
+using ManualiAPI.Exceptions;
+using ManualiAPI.DTO;
 using ManualiAPI.Models;
 using ManualiAPI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -19,33 +21,42 @@ public class ProductsController : ControllerBase
 
     // GET: /api/products
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ProductDto>>> GetAll()
+    public async Task<ActionResult<IEnumerable<GetProductDto>>> GetAll()
     {
-        var products = await _service.GetAllAsync();
+        var products = _service.Listar();
         return Ok(products); // 200 OK
+    }
+
+    // GET: /api/products/search?nome=caneca
+    [HttpGet("search")]
+    public ActionResult<IEnumerable<GetProductDto>> SearchByName([FromQuery] string nome)
+    {
+        var products = _service.BuscarPorNome(nome);
+        return Ok(products);
     }
 
     // GET: /api/products/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<ProductDto>> GetById(int id)
-    {
-        var product = await _service.GetByIdAsync(id);
-        if (product is null)
-        {
-            return NotFound(); // 404
-        }
-
-        return Ok(product);
-    }
-
-    // POST: /api/products  (corpo da requisição vem no JSON)
-    [HttpPost]
-    public async Task<ActionResult<ProductDto>> Create([FromBody] CreateProductDto dto)
+    public ActionResult<GetProductDto> GetById(int id)
     {
         try
         {
-            var product = await _service.CreateAsync(dto);
-            // 201 Created + cabeçalho Location apontando para o recurso criado.
+            var product = _service.BuscarPorId(id);
+            return Ok(product);
+        }
+        catch (ProductNotFoundException)
+        {
+            return NotFound(); // 404
+        }
+    }
+
+    // POST: /api/products
+    [HttpPost]
+    public ActionResult<GetProductDto> Create([FromBody] CreateProductDto dto)
+    {
+        try
+        {
+            var product = _service.Criar(dto);
             return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
         }
         catch (ArgumentException ex)
@@ -56,27 +67,35 @@ public class ProductsController : ControllerBase
 
     // PUT: /api/products/5
     [HttpPut("{id}")]
-    public async Task<ActionResult<ProductDto>> Update(int id, [FromBody] UpdateProductDto dto)
+    public ActionResult<GetProductDto> Update(int id, [FromBody] UpdateProductDto dto)
     {
-        var product = await _service.UpdateAsync(id, dto);
-        if (product is null)
+        try
+        {
+            var product = _service.Atualizar(id, dto);
+            return Ok(product);
+        }
+        catch (ProductNotFoundException)
         {
             return NotFound();
         }
-
-        return Ok(product);
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     // DELETE: /api/products/5
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    public IActionResult Delete(int id)
     {
-        var removed = await _service.DeleteAsync(id);
-        if (!removed)
+        try
+        {
+            _service.Deletar(id);
+            return NoContent(); // 204
+        }
+        catch (ProductNotFoundException)
         {
             return NotFound();
         }
-
-        return NoContent(); // 204 No Content
     }
 }
