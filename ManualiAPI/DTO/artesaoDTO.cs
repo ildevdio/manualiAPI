@@ -1,8 +1,7 @@
-﻿
+
 namespace ManualiAPI.DTO;
 
-// Dados comuns para criar um usuário
-public class CreateUserDto
+public class CreateArtesaoDto
 {
     public required string Username { get; set; }
 
@@ -11,10 +10,11 @@ public class CreateUserDto
     public required string Email { get; set; }
 
     public required string Cep { get; set; }
+
+    public required string Cpf { get; set; }
 }
 
-// Dados comuns para atualizar um usuário
-public class UpdateUserDto
+public class UpdateArtesaoDto
 {
     public int Id { get; set; }
 
@@ -24,11 +24,12 @@ public class UpdateUserDto
 
     public required string Cep { get; set; }
 
+    public required string Cpf { get; set; }
+
     public string? Password { get; set; }
 }
 
-// Dados comuns para consultar um usuário
-public class GetUserDto
+public class GetArtesaoDto
 {
     public int Id { get; set; }
 
@@ -39,8 +40,7 @@ public class GetUserDto
     public string Cep { get; set; } = string.Empty;
 }
 
-// Identificação para exclusão
-public class DeleteUserDto
+public class DeleteArtesaoDto
 {
     public int Id { get; set; }
 }
