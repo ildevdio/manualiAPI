@@ -7,7 +7,7 @@ public class Pedido
     private int _idPedido;
     private int _idProduto;
     private DateTime _data;
-    private string _endereco;
+    private string _cepPedido;
     private bool _concluido;
 
     public int IdPedido
@@ -28,17 +28,17 @@ public class Pedido
         set { _data = value; }
     }
 
-    public string Endereco
+    public string CepPedido
     {
-        get { return _endereco; }
+        get { return _cepPedido; }
         set
         {
             if (string.IsNullOrWhiteSpace(value))
             {
-                throw new ArgumentException("Endereço não pode estar vazio");
+                throw new ArgumentException("CEP não pode estar vazio");
             }
 
-            _endereco = value;
+            _cepPedido = value;
         }
     }
 
@@ -48,12 +48,12 @@ public class Pedido
         set { _concluido = value; }
     }
 
-    public Pedido(int idProduto, DateTime data, string endereco)
+    public Pedido(int idProduto, DateTime data, string cepPedido)
     {
         _idPedido = _idPedidoCount++;
         IdProduto = idProduto;
         Data = data;
-        Endereco = endereco;
+        CepPedido = cepPedido;
         Concluido = false;
     }
 }
