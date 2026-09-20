@@ -1,0 +1,40 @@
+@ManualiAPI_HostAddress = http://localhost:5217
+
+### Health check
+GET {{ManualiAPI_HostAddress}}/api/health
+Accept: application/json
+
+### Produto (Controllers) - Listar
+GET {{ManualiAPI_HostAddress}}/api/products
+Accept: application/json
+
+### Produto (Controllers) - Buscar por id
+GET {{ManualiAPI_HostAddress}}/api/products/1
+Accept: application/json
+
+### Produto (Controllers) - Criar
+POST {{ManualiAPI_HostAddress}}/api/products
+Content-Type: application/json
+
+{
+  "name": "Teclado Mecânico",
+  "price": 299.90,
+  "isActive": true
+}
+
+### Produto (Controllers) - Atualizar
+PUT {{ManualiAPI_HostAddress}}/api/products/1
+Content-Type: application/json
+
+{
+  "name": "Teclado Mecânico RGB",
+  "price": 349.90,
+  "isActive": true
+}
+
+### Produto (Controllers) - Deletar
+DELETE {{ManualiAPI_HostAddress}}/api/products/1
+
+### Produto (Minimal API) - Listar
+GET {{ManualiAPI_HostAddress}}/api/products-minimal/
+Accept: application/json
