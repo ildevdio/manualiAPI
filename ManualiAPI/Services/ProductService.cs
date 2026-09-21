@@ -102,12 +102,19 @@ public class ProductService : IProductService
 
     public void Deletar(int id)
     {
-        if (!_products.TryRemove(id, out _))
+        // Mesmo lock do estoque: evita apagar um produto no meio de uma
+        // redução ou devolução de estoque (remover enquanto outro thread lê).
+        lock (_estoqueLock)
         {
-            throw new ProductNotFoundException(id);
+            if (!_products.TryRemove(id, out _))
+            {
+                throw new ProductNotFoundException(id);
+            }
         }
     }
-    public void ReduzirEstoque(IEnumerable<(int IdProduto, int Quantidade)> itens)
+
+    public IReadOnlyList<(int IdProduto, int Quantidade, decimal PrecoUnitario)> ReservarEstoque(
+        IEnumerable<(int IdProduto, int Quantidade)> itens)
     {
         // Junta ids repetidos para checar o total real de cada produto
         var pedidos = itens
@@ -120,6 +127,8 @@ public class ProductService : IProductService
             throw new ArgumentException("Quantidade deve ser maior que zero.");
         }
 
+        // Único lock: validação + redução + leitura de preço são atômicas (tudo ou nada).
+        // Assim não há TOCTOU entre "checar estoque/preço" e "reservar".
         lock (_estoqueLock)
         {
             // Fase 1: valida TODOS, sem alterar nada
@@ -131,6 +140,11 @@ public class ProductService : IProductService
                     throw new ProductNotFoundException(id);
                 }
 
+                if (!produto.Ativo)
+                {
+                    throw new ArgumentException($"O produto '{produto.Nome}' está inativo.");
+                }
+
                 if (produto.Estoque < quantidade)
                 {
                     throw new EstoqueInsuficienteException(produto.Nome, produto.Estoque);
@@ -139,11 +153,16 @@ public class ProductService : IProductService
                 alvos.Add((produto, quantidade));
             }
 
-            // Fase 2: só agora reduz
+            var reservados = new List<(int IdProduto, int Quantidade, decimal PrecoUnitario)>();
+
+            // Fase 2: só agora reduz, e lê o preço DENTRO do lock (momento da reserva)
             foreach (var (produto, quantidade) in alvos)
             {
                 produto.Estoque -= quantidade;
+                reservados.Add((produto.Id, quantidade, produto.Preco));
             }
+
+            return reservados;
         }
     }
 
