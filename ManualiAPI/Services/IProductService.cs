@@ -10,6 +10,7 @@ public interface IProductService
     IEnumerable<GetProductDto> BuscarPorNome(string nome);
     GetProductDto Atualizar(int id, UpdateProductDto dto);
     void Deletar(int id);
-    void ReduzirEstoque(IEnumerable<(int IdProduto, int Quantidade)> itens);
+    IReadOnlyList<(int IdProduto, int Quantidade, decimal PrecoUnitario)> ReservarEstoque(
+        IEnumerable<(int IdProduto, int Quantidade)> itens);
     void DevolverEstoque(IEnumerable<(int IdProduto, int Quantidade)> itens);
 }

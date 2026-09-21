@@ -10,6 +10,9 @@ public class ArtesaoService : IArtesaoService
 {
     private readonly ConcurrentDictionary<int, Artesao> _artesaos = new();
     private readonly PasswordHasher<Artesao> _hasher = new();
+    // Serializa Criar/Atualizar: unicidade (check-then-act) + inserção atômicas,
+    // para dois cadastros simultâneos com o mesmo username/CPF não passarem juntos.
+    private readonly object _cadastroLock = new();
 
     public GetArtesaoDto Criar(CreateArtesaoDto dto)
     {
@@ -20,22 +23,27 @@ public class ArtesaoService : IArtesaoService
         ValidarTexto(dto.Cpf, "CPF");
 
         var cpf = NormalizarCpf(dto.Cpf);
-        GarantirUnicidade(dto.Username, dto.Email, cpf, ignorarId: null);
 
+        // Hash é lento de propósito: calculado FORA do lock
         var senhaHash = _hasher.HashPassword(null!, dto.Password);
 
-        var artesao = new Artesao(
-            dto.Username.Trim(), senhaHash, dto.Email.Trim(), dto.Cep, cpf);
-
-        _artesaos[artesao.Id] = artesao;
-
-        return new GetArtesaoDto
+        lock (_cadastroLock)
         {
-            Id = artesao.Id,
-            Username = artesao.Username,
-            Email = artesao.Email,
-            Cep = artesao.Cep
-        };
+            GarantirUnicidade(dto.Username, dto.Email, cpf, ignorarId: null);
+
+            var artesao = new Artesao(
+                dto.Username.Trim(), senhaHash, dto.Email.Trim(), dto.Cep, cpf);
+
+            _artesaos[artesao.Id] = artesao;
+
+            return new GetArtesaoDto
+            {
+                Id = artesao.Id,
+                Username = artesao.Username,
+                Email = artesao.Email,
+                Cep = artesao.Cep
+            };
+        }
     }
 
     public IEnumerable<GetArtesaoDto> Listar()
@@ -100,25 +108,36 @@ public class ArtesaoService : IArtesaoService
         ValidarTexto(dto.Cpf, "CPF");
 
         var cpf = NormalizarCpf(dto.Cpf);
-        GarantirUnicidade(dto.Username, dto.Email, cpf, ignorarId: id);
 
-        artesao.Username = dto.Username.Trim();
-        artesao.Email = dto.Email.Trim();
-        artesao.Cep = dto.Cep;
-        artesao.Cpf = cpf;
-
+        // Hash de senha é lento: calculado FORA do lock
+        string? novoHash = null;
         if (!string.IsNullOrWhiteSpace(dto.Password))
         {
-            artesao.Password = _hasher.HashPassword(artesao, dto.Password);
+            novoHash = _hasher.HashPassword(artesao, dto.Password);
         }
 
-        return new GetArtesaoDto
+        lock (_cadastroLock)
         {
-            Id = artesao.Id,
-            Username = artesao.Username,
-            Email = artesao.Email,
-            Cep = artesao.Cep
-        };
+            GarantirUnicidade(dto.Username, dto.Email, cpf, ignorarId: id);
+
+            artesao.Username = dto.Username.Trim();
+            artesao.Email = dto.Email.Trim();
+            artesao.Cep = dto.Cep;
+            artesao.Cpf = cpf;
+
+            if (novoHash is not null)
+            {
+                artesao.Password = novoHash;
+            }
+
+            return new GetArtesaoDto
+            {
+                Id = artesao.Id,
+                Username = artesao.Username,
+                Email = artesao.Email,
+                Cep = artesao.Cep
+            };
+        }
     }
 
     public void Deletar(int id)
