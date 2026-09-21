@@ -1,21 +1,15 @@
-﻿namespace ManualiAPI.Services;
+﻿using ManualiAPI.DTO;
 
-using ManualiAPI.DTO;
-using System.Collections.Generic;
+namespace ManualiAPI.Services;
 
 public interface IProductService
 {
     GetProductDto Criar(CreateProductDto dto);
-    
     IEnumerable<GetProductDto> Listar();
-
     GetProductDto BuscarPorId(int id);
-    
-    GetProductDto BuscarPorNome(string nome);
-    
+    IEnumerable<GetProductDto> BuscarPorNome(string nome);
     GetProductDto Atualizar(int id, UpdateProductDto dto);
-    
     void Deletar(int id);
-    
-    
+    void ReduzirEstoque(IEnumerable<(int IdProduto, int Quantidade)> itens);
+    void DevolverEstoque(IEnumerable<(int IdProduto, int Quantidade)> itens);
 }

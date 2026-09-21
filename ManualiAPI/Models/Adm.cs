@@ -5,9 +5,9 @@ public class Adm
     private static int _idAdmCount = 0;
 
     private int _idAdm;
-    private string _username;
-    private string _password;
-    private string _email;
+    private string _username = string.Empty;
+    private string _password = string.Empty;
+    private string _email = string.Empty;
 
     public int IdAdm
     {
@@ -59,7 +59,7 @@ public class Adm
 
     public Adm(string username, string password, string email)
     {
-        _idAdm = _idAdmCount++;
+        _idAdm = Interlocked.Increment(ref _idAdmCount);
 
         Username = username;
         Password = password;

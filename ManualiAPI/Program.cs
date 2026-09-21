@@ -1,19 +1,19 @@
-using ManualiAPI.Repositories;
-using ManualiAPI.Routes;
+using ManualiAPI.Middleware;
 using ManualiAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
+builder.Services.AddSwaggerGen();
 
-// Injeção de dependência:
-// InMemoryProductRepository é singleton (uma única instância em toda a aplicação).
-builder.Services.AddSingleton<IProductRepository, InMemoryProductRepository>();
-builder.Services.AddScoped<IProductService, ProductService>();
+// Os dados vivem dentro dos services, então todos precisam ser Singleton
+builder.Services.AddSingleton<IProductService, ProductService>();
+builder.Services.AddSingleton<IUsuarioService, UsuarioService>();
+builder.Services.AddSingleton<IArtesaoService, ArtesaoService>();
+builder.Services.AddSingleton<IAdmService, AdmService>();
+builder.Services.AddSingleton<IPedidoService, PedidoService>();
 
 builder.Services.AddCors(options =>
 {
@@ -27,18 +27,25 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseMiddleware<ExceptionHandlingMiddleware>();   // primeiro, para envolver tudo
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// No Docker e no perfil "http" não existe porta HTTPS, e o redirect falharia.
+// Só redireciona quando uma porta HTTPS estiver realmente configurada.
+if (!string.IsNullOrEmpty(builder.Configuration["ASPNETCORE_HTTPS_PORT"]))
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseCors("AllowAll");
 
 app.MapControllers();
-
-// Rotas declaradas no estilo "minimal API" ficam agrupadas.
-app.MapProductRoutes();
 
 app.Run();

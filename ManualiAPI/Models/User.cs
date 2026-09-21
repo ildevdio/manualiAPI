@@ -5,10 +5,10 @@ public abstract class User
     private static int _idCount = 0;
 
     private int _id;
-    private string _username;
-    private string _password;
-    private string _email;
-    private string _cep;
+    private string _username = string.Empty;
+    private string _password = string.Empty;
+    private string _email = string.Empty;
+    private string _cep = string.Empty;
 
     public int Id
     {
@@ -74,7 +74,7 @@ public abstract class User
 
     public User(string username, string password, string email, string cep)
     {
-        _id = _idCount++;
+        _id = Interlocked.Increment(ref _idCount);
 
         Username = username;
         Password = password;
