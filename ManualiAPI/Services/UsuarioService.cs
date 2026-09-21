@@ -10,27 +10,35 @@ public class UsuarioService : IUsuarioService
 {
     private readonly ConcurrentDictionary<int, Usuario> _usuarios = new();
     private readonly PasswordHasher<Usuario> _hasher = new();
+    // Serializa "checar unicidade + inserir": sem o lock, dois POSTs simultâneos
+    // com o mesmo username passariam os dois (check-then-act).
+    private readonly object _cadastroLock = new();
 
     public GetUsuarioDto Criar(CreateUsuarioDto dto)
     {
         ValidarTexto(dto.Password, "Senha");
         ValidarTexto(dto.Username, "Username");
         ValidarTexto(dto.Email, "E-mail");
-        GarantirUnicidade(dto.Username, dto.Email, ignorarId: null);
 
+        // Hash é lento de propósito: fica FORA do lock para não segurar outras requisições
         var senhaHash = _hasher.HashPassword(null!, dto.Password);
 
-        var usuario = new Usuario(dto.Username.Trim(), senhaHash, dto.Email.Trim(), dto.Cep);
-
-        _usuarios[usuario.Id] = usuario;
-
-        return new GetUsuarioDto
+        lock (_cadastroLock)
         {
-            Id = usuario.Id,
-            Username = usuario.Username,
-            Email = usuario.Email,
-            Cep = usuario.Cep
-        };
+            GarantirUnicidade(dto.Username, dto.Email, ignorarId: null);
+
+            var usuario = new Usuario(dto.Username.Trim(), senhaHash, dto.Email.Trim(), dto.Cep);
+
+            _usuarios[usuario.Id] = usuario;
+
+            return new GetUsuarioDto
+            {
+                Id = usuario.Id,
+                Username = usuario.Username,
+                Email = usuario.Email,
+                Cep = usuario.Cep
+            };
+        }
     }
 
     public IEnumerable<GetUsuarioDto> Listar()
@@ -92,24 +100,33 @@ public class UsuarioService : IUsuarioService
         ValidarTexto(dto.Username, "Username");
         ValidarTexto(dto.Email, "E-mail");
         ValidarTexto(dto.Cep, "CEP");
-        GarantirUnicidade(dto.Username, dto.Email, ignorarId: id);
 
-        usuario.Username = dto.Username.Trim();
-        usuario.Email = dto.Email.Trim();
-        usuario.Cep = dto.Cep;
+        // Hash fora do lock (operação lenta)
+        var novoHash = string.IsNullOrWhiteSpace(dto.Password)
+            ? null
+            : _hasher.HashPassword(usuario, dto.Password);
 
-        if (!string.IsNullOrWhiteSpace(dto.Password))
+        lock (_cadastroLock)
         {
-            usuario.Password = _hasher.HashPassword(usuario, dto.Password);
+            GarantirUnicidade(dto.Username, dto.Email, ignorarId: id);
+
+            usuario.Username = dto.Username.Trim();
+            usuario.Email = dto.Email.Trim();
+            usuario.Cep = dto.Cep;
+
+            if (novoHash is not null)
+            {
+                usuario.Password = novoHash;
+            }
+
+            return new GetUsuarioDto
+            {
+                Id = usuario.Id,
+                Username = usuario.Username,
+                Email = usuario.Email,
+                Cep = usuario.Cep
+            };
         }
-
-        return new GetUsuarioDto
-        {
-            Id = usuario.Id,
-            Username = usuario.Username,
-            Email = usuario.Email,
-            Cep = usuario.Cep
-        };
     }
 
     public void Deletar(int id)
