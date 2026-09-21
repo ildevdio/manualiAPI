@@ -5,21 +5,15 @@ public class Pedido
     private static int _idPedidoCount = 0;
 
     private int _idPedido;
-    private int _idProduto;
     private DateTime _data;
-    private string _cepPedido;
+    private string _cepPedido = string.Empty;
     private bool _concluido;
+    private readonly List<ItemPedido> _itens;
 
     public int IdPedido
     {
         get { return _idPedido; }
         set { _idPedido = value; }
-    }
-
-    public int IdProduto
-    {
-        get { return _idProduto; }
-        set { _idProduto = value; }
     }
 
     public DateTime Data
@@ -48,10 +42,21 @@ public class Pedido
         set { _concluido = value; }
     }
 
-    public Pedido(int idProduto, DateTime data, string cepPedido)
+    public IReadOnlyList<ItemPedido> Itens => _itens;
+
+    public decimal Total => _itens.Sum(i => i.Subtotal);
+
+    public Pedido(IEnumerable<ItemPedido> itens, DateTime data, string cepPedido)
     {
-        _idPedido = _idPedidoCount++;
-        IdProduto = idProduto;
+        var lista = itens.ToList();
+
+        if (lista.Count == 0)
+        {
+            throw new ArgumentException("O pedido precisa ter pelo menos um item.");
+        }
+
+        _idPedido = Interlocked.Increment(ref _idPedidoCount);
+        _itens = lista;
         Data = data;
         CepPedido = cepPedido;
         Concluido = false;

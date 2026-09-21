@@ -2,7 +2,7 @@ namespace ManualiAPI.Models;
 
 public class Artesao : User
 {
-    private string _cpf;
+    private string _cpf = string.Empty;
 
     public string Cpf
     {

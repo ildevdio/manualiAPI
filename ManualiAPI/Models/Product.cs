@@ -4,8 +4,8 @@ public class Product
 {
     private static int _idCount = 0;
     private int _id;
-    private string _nome;
-    private string _descricao;
+    private string _nome = string.Empty;
+    private string _descricao = string.Empty;
     private decimal _preco;
     private int _estoque = 0;
     private bool _ativo = true;
@@ -76,12 +76,12 @@ public class Product
     
     public Product(string nome, string descricao, decimal preco, int estoque, bool ativo)
     {
-        this._id = _idCount++;
+        this._id = Interlocked.Increment(ref _idCount);
         
         Nome = nome;
         Descricao = descricao;
-        Preco = preco;
         Estoque = estoque;
         Ativo = ativo;
+        Preco = preco;   // por último: preço negativo desativa o produto
     }
 }
