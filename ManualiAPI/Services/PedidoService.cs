@@ -87,8 +87,8 @@ public class PedidoService : IPedidoService
             throw new PedidoNotFoundException(id);
         }
 
-        // Mesmo lock do Deletar: impede que Concluido mude no meio de um delete
-        // (que decide devolver o estoque com base em Concluido).
+        // Lock: impede que Deletar decida devolver estoque com base num
+        // Concluido que está sendo alterado aqui ao mesmo tempo.
         lock (_pedidoLock)
         {
             pedido.CepPedido = dto.Cep;
@@ -105,11 +105,11 @@ public class PedidoService : IPedidoService
             throw new PedidoNotFoundException(id);
         }
 
-        // A decisão "pedido não concluído => devolver estoque" precisa ser
-        // consistente com Atualizar (que pode mexer em Concluido).
+        // Pedido ainda não concluído: os produtos voltam para o estoque.
+        // Lock: a decisão lê Concluido, que poderia estar sendo mudado por
+        // um Atualizar concorrente.
         lock (_pedidoLock)
         {
-            // Pedido ainda não concluído: os produtos voltam para o estoque
             if (!pedido.Concluido)
             {
                 _produtos.DevolverEstoque(

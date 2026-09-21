@@ -10,8 +10,8 @@ public class AdmService : IAdmService
 {
     private readonly ConcurrentDictionary<int, Adm> _adms = new();
     private readonly PasswordHasher<Adm> _hasher = new();
-    // Serializa "checar unicidade + inserir": evita dois cadastros simultâneos
-    // com o mesmo username/e-mail (check-then-act).
+    // Serializa Criar/Atualizar: unicidade (check-then-act) + inserção atômicas,
+    // para dois POSTs simultâneos com o mesmo username não passarem juntos.
     private readonly object _cadastroLock = new();
 
     public GetAdmDto Criar(CreateAdmDto dto)
@@ -20,7 +20,7 @@ public class AdmService : IAdmService
         ValidarTexto(dto.Username, "Username");
         ValidarTexto(dto.Email, "E-mail");
 
-        // Hash fora do lock (operação lenta)
+        // Hash é lento de propósito: calculado FORA do lock
         var senhaHash = _hasher.HashPassword(null!, dto.Password);
 
         lock (_cadastroLock)
@@ -96,10 +96,12 @@ public class AdmService : IAdmService
         ValidarTexto(dto.Username, "Username");
         ValidarTexto(dto.Email, "E-mail");
 
-        // Hash fora do lock (operação lenta)
-        var novoHash = string.IsNullOrWhiteSpace(dto.Password)
-            ? null
-            : _hasher.HashPassword(adm, dto.Password);
+        // Hash de senha é lento: calculado FORA do lock
+        string? novoHash = null;
+        if (!string.IsNullOrWhiteSpace(dto.Password))
+        {
+            novoHash = _hasher.HashPassword(adm, dto.Password);
+        }
 
         lock (_cadastroLock)
         {

@@ -10,8 +10,8 @@ public class ArtesaoService : IArtesaoService
 {
     private readonly ConcurrentDictionary<int, Artesao> _artesaos = new();
     private readonly PasswordHasher<Artesao> _hasher = new();
-    // Serializa "checar unicidade + inserir": evita dois cadastros simultâneos
-    // com o mesmo username/e-mail/CPF (check-then-act).
+    // Serializa Criar/Atualizar: unicidade (check-then-act) + inserção atômicas,
+    // para dois cadastros simultâneos com o mesmo username/CPF não passarem juntos.
     private readonly object _cadastroLock = new();
 
     public GetArtesaoDto Criar(CreateArtesaoDto dto)
@@ -24,7 +24,7 @@ public class ArtesaoService : IArtesaoService
 
         var cpf = NormalizarCpf(dto.Cpf);
 
-        // Hash fora do lock (operação lenta)
+        // Hash é lento de propósito: calculado FORA do lock
         var senhaHash = _hasher.HashPassword(null!, dto.Password);
 
         lock (_cadastroLock)
@@ -109,10 +109,12 @@ public class ArtesaoService : IArtesaoService
 
         var cpf = NormalizarCpf(dto.Cpf);
 
-        // Hash fora do lock (operação lenta)
-        var novoHash = string.IsNullOrWhiteSpace(dto.Password)
-            ? null
-            : _hasher.HashPassword(artesao, dto.Password);
+        // Hash de senha é lento: calculado FORA do lock
+        string? novoHash = null;
+        if (!string.IsNullOrWhiteSpace(dto.Password))
+        {
+            novoHash = _hasher.HashPassword(artesao, dto.Password);
+        }
 
         lock (_cadastroLock)
         {

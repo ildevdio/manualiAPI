@@ -10,8 +10,8 @@ public class UsuarioService : IUsuarioService
 {
     private readonly ConcurrentDictionary<int, Usuario> _usuarios = new();
     private readonly PasswordHasher<Usuario> _hasher = new();
-    // Serializa "checar unicidade + inserir": sem o lock, dois POSTs simultâneos
-    // com o mesmo username passariam os dois (check-then-act).
+    // Serializa Criar/Atualizar: unicidade (check-then-act) + inserção atômicas,
+    // para dois POSTs simultâneos com o mesmo username não passarem juntos.
     private readonly object _cadastroLock = new();
 
     public GetUsuarioDto Criar(CreateUsuarioDto dto)
@@ -20,7 +20,7 @@ public class UsuarioService : IUsuarioService
         ValidarTexto(dto.Username, "Username");
         ValidarTexto(dto.Email, "E-mail");
 
-        // Hash é lento de propósito: fica FORA do lock para não segurar outras requisições
+        // Hash é lento de propósito: calculado FORA do lock
         var senhaHash = _hasher.HashPassword(null!, dto.Password);
 
         lock (_cadastroLock)
@@ -101,10 +101,12 @@ public class UsuarioService : IUsuarioService
         ValidarTexto(dto.Email, "E-mail");
         ValidarTexto(dto.Cep, "CEP");
 
-        // Hash fora do lock (operação lenta)
-        var novoHash = string.IsNullOrWhiteSpace(dto.Password)
-            ? null
-            : _hasher.HashPassword(usuario, dto.Password);
+        // Hash de senha é lento: calculado FORA do lock
+        string? novoHash = null;
+        if (!string.IsNullOrWhiteSpace(dto.Password))
+        {
+            novoHash = _hasher.HashPassword(usuario, dto.Password);
+        }
 
         lock (_cadastroLock)
         {
